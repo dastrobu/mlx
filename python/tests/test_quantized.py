@@ -3,6 +3,7 @@
 import unittest
 
 import mlx.core as mx
+import mlx.nn as nn
 import mlx_tests
 
 
@@ -75,6 +76,9 @@ class TestQuantized(mlx_tests.MLXTestCase):
                             self.assertEqual(y_q.shape, y_hat.shape)
                             self.assertLess((y_q - y_hat).abs().max(), 1e-3)
 
+    def test_quantized_linear(self):
+        layer = nn.QuantizedLinear(64, 64, dtype=mx.bfloat16)
+        self.assertEqual(layer.bias.dtype, mx.bfloat16)
 
 if __name__ == "__main__":
     unittest.main()

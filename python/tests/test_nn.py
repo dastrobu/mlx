@@ -18,6 +18,10 @@ class TestNN(mlx_tests.MLXTestCase):
         outputs = layer(inputs)
         self.assertEqual(tuple(outputs.shape), (10, 8))
 
+        layer = nn.Linear(input_dims=4, output_dims=8, bias=True, dtype=mx.bfloat16)
+        self.assertEqual(layer.weight.dtype, mx.bfloat16)
+        self.assertEqual(layer.bias.dtype, mx.bfloat16)
+
     def test_cross_entropy(self):
         logits = mx.array([[0.0, -float("inf")], [-float("inf"), 0.0]])
         targets = mx.array([0, 1])
@@ -320,6 +324,10 @@ class TestNN(mlx_tests.MLXTestCase):
         self.assertTrue(np.allclose(means, 3 * np.ones_like(means), atol=1e-6))
         self.assertTrue(np.allclose(var, 4 * np.ones_like(var), atol=1e-6))
 
+        g = nn.GroupNorm(2, 3, affine=True, dtype=mx.bfloat16)
+        self.assertEqual(g.weight.dtype, mx.bfloat16)
+        self.assertEqual(g.bias.dtype, mx.bfloat16)
+
     def test_batch_norm(self):
         mx.random.seed(42)
         x = mx.random.normal((5, 4), dtype=mx.float32)
@@ -417,6 +425,10 @@ class TestNN(mlx_tests.MLXTestCase):
         with self.assertRaises(ValueError):
             y = bn(x)
 
+        bn = nn.BatchNorm(num_features=C, affine=True, dtype=mx.bfloat16)
+        self.assertEqual(bn.weight.dtype, mx.bfloat16)
+        self.assertEqual(bn.bias.dtype, mx.bfloat16)
+
     def test_batch_norm_stats(self):
         batch_size = 2
         num_features = 4
@@ -457,6 +469,10 @@ class TestNN(mlx_tests.MLXTestCase):
         self.assertTrue(np.allclose(batch_norm._running_mean, running_mean, atol=1e-5))
         self.assertTrue(np.allclose(batch_norm._running_var, running_var, atol=1e-5))
 
+        g = nn.GroupNorm(2, 8, affine=True, dtype=mx.bfloat16)
+        self.assertEqual(g.weight.dtype, mx.bfloat16)
+        self.assertEqual(g.bias.dtype, mx.bfloat16)
+
     def test_conv1d(self):
         N = 5
         L = 12
@@ -477,6 +493,10 @@ class TestNN(mlx_tests.MLXTestCase):
 
         c = nn.Conv1d(in_channels=C_in, out_channels=C_out, kernel_size=ks, bias=False)
         self.assertTrue("bias" not in c.parameters())
+
+        c = nn.Conv1d(in_channels=C_in, out_channels=C_out, kernel_size=ks, bias=True, dtype=mx.bfloat16)
+        self.assertEqual(c.weight.dtype, mx.bfloat16)
+        self.assertEqual(c.bias.dtype, mx.bfloat16)
 
     def test_conv2d(self):
         x = mx.ones((4, 8, 8, 3))
@@ -520,6 +540,10 @@ class TestNN(mlx_tests.MLXTestCase):
         y = c(x)
         self.assertEqual(y.shape, [4, 3, 3, 8])
         self.assertLess(mx.abs(y - c.weight.sum((1, 2, 3))).max(), 1e-4)
+
+        c = nn.Conv2d(3, 8, 3, padding=0, stride=2, bias=True, dtype=mx.bfloat16)
+        self.assertEqual(c.weight.dtype, mx.bfloat16)
+        self.assertEqual(c.bias.dtype, mx.bfloat16)
 
     def test_sequential(self):
         x = mx.ones((10, 2))

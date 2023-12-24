@@ -41,6 +41,7 @@ class QuantizedLinear(Module):
         bias: bool = True,
         group_size: int = 64,
         bits: int = 4,
+        dtype: mx.Dtype = mx.float32,
     ):
         super().__init__()
 
@@ -54,12 +55,13 @@ class QuantizedLinear(Module):
             low=-scale,
             high=scale,
             shape=(output_dims, input_dims),
+            dtype=dtype,
         )
         self.weight, self.scales, self.biases = mx.quantize(weight, group_size, bits)
 
         # And bias if needed
         if bias:
-            self.bias = mx.zeros((output_dims,))
+            self.bias = mx.zeros((output_dims,), dtype=dtype)
 
         # Freeze this model's parameters
         self.freeze()

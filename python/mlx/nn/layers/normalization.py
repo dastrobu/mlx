@@ -27,11 +27,16 @@ class LayerNorm(Module):
             normalization
     """
 
-    def __init__(self, dims: int, eps: float = 1e-5, affine: bool = True):
+    def __init__(self,
+                 dims: int,
+                 eps: float = 1e-5,
+                 affine: bool = True,
+                 dtype: mx.Dtype = mx.float32
+                 ):
         super().__init__()
         if affine:
-            self.bias = mx.zeros((dims,))
-            self.weight = mx.ones((dims,))
+            self.bias = mx.zeros((dims,), dtype=dtype)
+            self.weight = mx.ones((dims,), dtype=dtype)
         self.eps = eps
         self.dims = dims
 
@@ -124,11 +129,12 @@ class GroupNorm(Module):
         eps: float = 1e-5,
         affine: bool = True,
         pytorch_compatible: bool = False,
+        dtype: mx.Dtype = mx.float32
     ):
         super().__init__()
         if affine:
-            self.bias = mx.zeros((dims,))
-            self.weight = mx.ones((dims,))
+            self.bias = mx.zeros((dims,), dtype=dtype)
+            self.weight = mx.ones((dims,), dtype=dtype)
         self.num_groups = num_groups
         self.dims = dims
         self.eps = eps
@@ -230,6 +236,7 @@ class BatchNorm(Module):
         momentum: float = 0.1,
         affine: bool = True,
         track_running_stats: bool = True,
+        dtype: mx.Dtype = mx.float32
     ):
         super().__init__()
 
@@ -239,8 +246,8 @@ class BatchNorm(Module):
         self.track_running_stats = track_running_stats
 
         if affine:
-            self.weight = mx.ones((num_features,))
-            self.bias = mx.zeros((num_features,))
+            self.weight = mx.ones((num_features,), dtype=dtype)
+            self.bias = mx.zeros((num_features,), dtype=dtype)
 
         if self.track_running_stats:
             self._running_mean = mx.zeros((num_features,))

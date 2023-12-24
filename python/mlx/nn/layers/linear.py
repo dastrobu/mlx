@@ -24,16 +24,22 @@ class Linear(Module):
           not use a bias. Default ``True``.
     """
 
-    def __init__(self, input_dims: int, output_dims: int, bias: bool = True):
+    def __init__(self,
+                 input_dims: int,
+                 output_dims: int,
+                 bias: bool = True,
+                 dtype: mx.Dtype = mx.float32,
+                 ) -> None:
         super().__init__()
         scale = math.sqrt(1 / input_dims)
         self.weight = mx.random.uniform(
             low=-scale,
             high=scale,
             shape=(output_dims, input_dims),
+            dtype=dtype,
         )
         if bias:
-            self.bias = mx.zeros((output_dims,))
+            self.bias = mx.zeros((output_dims,), dtype=dtype)
 
     def _extra_repr(self):
         return f"input_dims={self.weight.shape[1]}, output_dims={self.weight.shape[0]}, bias={'bias' in self}"

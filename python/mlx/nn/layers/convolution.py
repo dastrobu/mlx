@@ -35,6 +35,7 @@ class Conv1d(Module):
         stride: int = 1,
         padding: int = 0,
         bias: bool = True,
+        dtype: mx.Dtype = mx.float32
     ):
         super().__init__()
 
@@ -43,9 +44,10 @@ class Conv1d(Module):
             low=-scale,
             high=scale,
             shape=(out_channels, kernel_size, in_channels),
+            dtype=dtype,
         )
         if bias:
-            self.bias = mx.zeros((out_channels,))
+            self.bias = mx.zeros((out_channels,), dtype=dtype)
 
         self.padding = padding
         self.stride = stride
@@ -93,6 +95,7 @@ class Conv2d(Module):
         stride: Union[int, tuple] = 1,
         padding: Union[int, tuple] = 0,
         bias: bool = True,
+        dtype: mx.Dtype = mx.float32
     ):
         super().__init__()
 
@@ -105,9 +108,10 @@ class Conv2d(Module):
             low=-scale,
             high=scale,
             shape=(out_channels, *kernel_size, in_channels),
+            dtype=dtype,
         )
         if bias:
-            self.bias = mx.zeros((out_channels,))
+            self.bias = mx.zeros((out_channels,), dtype=dtype)
 
         self.padding = padding
         self.stride = stride

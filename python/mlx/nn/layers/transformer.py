@@ -44,6 +44,7 @@ class MultiHeadAttention(Module):
         value_dims: Optional[int] = None,
         value_output_dims: Optional[int] = None,
         bias: bool = False,
+        dtype: mx.Dtype = mx.float32
     ):
         super().__init__()
 
@@ -59,10 +60,10 @@ class MultiHeadAttention(Module):
         value_output_dims = value_output_dims or dims
 
         self.num_heads = num_heads
-        self.query_proj = Linear(query_input_dims, dims, bias=bias)
-        self.key_proj = Linear(key_input_dims, dims, bias=bias)
-        self.value_proj = Linear(value_input_dims, value_dims, bias=bias)
-        self.out_proj = Linear(value_dims, value_output_dims, bias=bias)
+        self.query_proj = Linear(query_input_dims, dims, bias=bias, dtype=dtype)
+        self.key_proj = Linear(key_input_dims, dims, bias=bias, dtype=dtype)
+        self.value_proj = Linear(value_input_dims, value_dims, bias=bias, dtype=dtype)
+        self.out_proj = Linear(value_dims, value_output_dims, bias=bias, dtype=dtype)
 
     def __call__(self, queries, keys, values, mask=None):
         queries = self.query_proj(queries)
@@ -97,14 +98,14 @@ class MultiHeadAttention(Module):
 
 
 class TransformerEncoderLayer(Module):
-    def __init__(self, dims: int, num_heads: int, mlp_dims: Optional[int] = None):
+    def __init__(self, dims: int, num_heads: int, mlp_dims: Optional[int] = None, dtype: mx.Dtype = mx.float32):
         super().__init__()
         mlp_dims = mlp_dims or dims * 4
-        self.attention = MultiHeadAttention(dims, num_heads)
-        self.ln1 = LayerNorm(dims)
-        self.ln2 = LayerNorm(dims)
-        self.linear1 = Linear(dims, mlp_dims)
-        self.linear2 = Linear(mlp_dims, dims)
+        self.attention = MultiHeadAttention(dims, num_heads, dtype=dtype)
+        self.ln1 = LayerNorm(dims, dtype=dtype)
+        self.ln2 = LayerNorm(dims, dtype=dtype)
+        self.linear1 = Linear(dims, mlp_dims, dtype=dtype)
+        self.linear2 = Linear(mlp_dims, dims, dtype=dtype)
 
     def __call__(self, x, mask):
         y = self.ln1(x)
@@ -122,11 +123,11 @@ class TransformerEncoderLayer(Module):
 
 class TransformerEncoder(Module):
     def __init__(
-        self, num_layers: int, dims: int, num_heads: int, mlp_dims: Optional[int] = None
+        self, num_layers: int, dims: int, num_heads: int, mlp_dims: Optional[int] = None, dtype: mx.DType = mx.float32
     ):
         super().__init__()
         self.layers = [
-            TransformerEncoderLayer(dims, num_heads, mlp_dims)
+            TransformerEncoderLayer(dims, num_heads, mlp_dims, dtype=dtype)
             for i in range(num_layers)
         ]
         self.ln = LayerNorm(dims)
@@ -140,16 +141,16 @@ class TransformerEncoder(Module):
 
 
 class TransformerDecoderLayer(Module):
-    def __init__(self, dims: int, num_heads: int, mlp_dims: Optional[int] = None):
+    def __init__(self, dims: int, num_heads: int, mlp_dims: Optional[int] = None, dtype: mx.DType = mx.float32):
         super().__init__()
         mlp_dims = mlp_dims or dims * 4
-        self.self_attention = MultiHeadAttention(dims, num_heads)
-        self.cross_attention = MultiHeadAttention(dims, num_heads)
-        self.ln1 = LayerNorm(dims)
-        self.ln2 = LayerNorm(dims)
-        self.ln3 = LayerNorm(dims)
-        self.linear1 = Linear(dims, mlp_dims)
-        self.linear2 = Linear(mlp_dims, dims)
+        self.self_attention = MultiHeadAttention(dims, num_heads, dtype=dtype)
+        self.cross_attention = MultiHeadAttention(dims, num_heads, dtype=dtype)
+        self.ln1 = LayerNorm(dims, dtype=dtype)
+        self.ln2 = LayerNorm(dims, dtype=dtype)
+        self.ln3 = LayerNorm(dims, dtype=dtype)
+        self.linear1 = Linear(dims, mlp_dims, dtype=dtype)
+        self.linear2 = Linear(mlp_dims, dims, dtype=dtype)
 
     def __call__(self, x, memory, x_mask, memory_mask):
         y = self.ln1(x)
@@ -171,14 +172,14 @@ class TransformerDecoderLayer(Module):
 
 class TransformerDecoder(Module):
     def __init__(
-        self, num_layers: int, dims: int, num_heads: int, mlp_dims: Optional[int] = None
+        self, num_layers: int, dims: int, num_heads: int, mlp_dims: Optional[int] = None, dtype: mx.DType = mx.float32
     ):
         super().__init__()
         self.layers = [
-            TransformerDecoderLayer(dims, num_heads, mlp_dims)
+            TransformerDecoderLayer(dims, num_heads, mlp_dims, dtype=dtype)
             for i in range(num_layers)
         ]
-        self.ln = LayerNorm(dims)
+        self.ln = LayerNorm(dims, dtype=dtype)
 
     def __call__(self, x, memory, x_mask, memory_mask):
         for l in self.layers:
@@ -198,20 +199,21 @@ class Transformer(Module):
         mlp_dims: Optional[int] = None,
         custom_encoder: Optional[Any] = None,
         custom_decoder: Optional[Any] = None,
+        dtype: mx.DType = mx.float32
     ):
         super().__init__()
         if custom_encoder is not None:
             self.encoder = custom_encoder
         else:
             self.encoder = TransformerEncoder(
-                num_encoder_layers, dims, num_heads, mlp_dims
+                num_encoder_layers, dims, num_heads, mlp_dims, dtype=dtype,
             )
 
         if custom_decoder is not None:
             self.decoder = custom_decoder
         else:
             self.decoder = TransformerDecoder(
-                num_decoder_layers, dims, num_heads, mlp_dims
+                num_decoder_layers, dims, num_heads, mlp_dims, dtype=dtype,
             )
 
     def __call__(self, src, tgt, src_mask, tgt_mask, memory_mask):
